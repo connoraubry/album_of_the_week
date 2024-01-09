@@ -1,5 +1,6 @@
 #!/bin/bash
 set -x
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+cd ${SCRIPT_DIR}/..
 
-${SCRIPT_DIR}/../venv/bin/python3 ${SCRIPT_DIR}/../gen_next.py
+./venv/bin/python3 ./gen_next.py
