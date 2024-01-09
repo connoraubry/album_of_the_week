@@ -64,8 +64,11 @@ def load_from_mbid(album, mbid):
     if success:
         album["date"] = date
     print("album art")
-    if get_album_art(mbid) == False:
-        return False
+    image_path = f"static/images/{album['title']}.jpg"
+    if get_album_art(mbid, image_path) == False:
+        return False 
+
+    album['image'] = image_path
 
     with open("album_info.json", "w") as fp:
         json.dump(album, fp, indent=2)
@@ -74,21 +77,26 @@ def load_from_mbid(album, mbid):
     
 def load_without_mbid(album, final_match):
     image_url = ""
+    image_path = f"static/images/{album['title']}.jpg"
+    album['image'] = image_path
+
+
     for image in final_match['image']:
         if image['size'] == "extralarge":
             image_url = image['#text']
     if image_url != "":
-        if get_and_save_image(image_url) == False:
+        if get_and_save_image(image_url, image_path) == False:
             return False
         with open("album_info.json", "w") as fp:
             json.dump(album, fp, indent=2)
     else:
         return False 
     return True 
-def get_and_save_image(url):
+
+def get_and_save_image(url, image_path):
     r = requests.get(url, allow_redirects=True)
     if r.status_code == 200:
-        open("static/cover.jpg", "wb").write(r.content)
+        open(image_path, "wb").write(r.content)
         return True 
     return False 
 
@@ -105,12 +113,12 @@ def musicbrainz_query(mbid):
             date = s[0]
     return date, True
 
-def get_album_art(mbid): 
+def get_album_art(mbid, image_path): 
     url = f"http://coverartarchive.org/release/{mbid}/front"
     print(url)
     r = requests.get(url, allow_redirects=True)
     if r.status_code == 200:
-        open("static/cover.jpg", "wb").write(r.content)
+        open(image_path, "wb").write(r.content)
         return True 
     return False 
 
