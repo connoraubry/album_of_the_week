@@ -1,0 +1,5 @@
+<div id="album_list" class="autocomplete-items">
+{% for elem in albums %}
+  <div class="option">{{ elem.title }} ({{ elem.artist }})</div>
+{% endfor %}
+</div>

@@ -1,0 +1,19 @@
+<form autocomplete="off" name="albumform" hx-post="/submit" >
+
+  <label for="title">Submit an album:</label>
+
+  <div class="autocomplete">
+    <input list="album_list" type="text" id="title" name="title" placeholder="Album" class="album_input"
+    hx-get="/search" hx-trigger="keyup changed delay:.5s" 
+    hx-target="#album_list" hx-swap="outerHTML">
+  
+    {% include 'options.html' %}
+  </div>
+  <input type="submit" id="submit" value=">" name="submit">
+
+  <p id="searchresults">
+    {% if form_result %}
+    {{ form_result }}
+    {% endif %}
+  </p>
+</form>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+
+    <title>Album of the Week</title>
+
+    <link rel="stylesheet" type="text/css" href="/static/css/primitive.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/main.css" />
+
+    <script src="/static/js/htmx.min.js"></script>
+    <script src="/static/js/main.js"></script>
+  </head>
+  <body >
+    <header class="text-center">
+      <h1>Album of the Week</h1>
+    </header>
+    <section>
+      <div class="flex-row">
+        <!-- Album art / info -->
+        <div class="flex-small two-thirds">
+          <div class="flex-row">
+            <div class="flex-large two-thirds text-center">
+                <img src="/static/cover.jpg" />
+            </div>
+            <div class="flex-large one-third vertical-center">
+              <article class="text-center">
+                <p id="album-title"><b><i>{{ album.title }}</i></b></p>
+                <p id="album-artist">{{ album.artist }}</p>
+                <p id="album-year">{{ album.date }}</p>
+              </article>
+            </div>
+          </div>
+        </div>
+        <!-- Submit Form-->
+        <section id="form-section" class="flex-small one-third vertical-center">
+          <div> 
+            {% include 'form.html' %}
+          </div>
+        </section>
+      </div>
+    </main>
+    <footer>
+    </footer>
+  </body>
+</html>
