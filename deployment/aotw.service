@@ -3,9 +3,11 @@ Description=Gunicorn instance for Album of the Week
 After=network.target
 
 [Service]
+User=root
+Group=www-data
 WorkingDirectory=/root/album_of_the_week
 Environment="PATH=/root/album_of_the_week/venv/bin"
-ExecStart=/root/album_of_the_week/venv/bin/gunicorn --config /root/album_of_the_week/gunicorn_config.py app:app
+ExecStart=/root/album_of_the_week/venv/bin/gunicorn --config /root/album_of_the_week/gunicorn_config.py wsgi:app
 
 [Install]
 WantedBy=multi-user.target
