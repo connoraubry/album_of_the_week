@@ -1,0 +1,11 @@
+[Unit]
+Description=Gunicorn instance for Album of the Week
+After=network.target
+
+[Service]
+WorkingDirectory=/root/album_of_the_week
+Environment="PATH=/root/album_of_the_week/venv/bin"
+ExecStart=/root/album_of_the_week/venv/bin/gunicorn --config /root/album_of_the_week/gunicorn_config.py app:app
+
+[Install]
+WantedBy=multi-user.target
