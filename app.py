@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 import os
 import requests
 import urllib.parse
+import hashlib
+from datetime import datetime
 
 app = Flask(__name__)
 count = 1
@@ -60,9 +62,29 @@ def submit():
     query = request.form.get("title", "")
 
     album = parse_album_query(query)
+    album["submitted_by"] = get_ip_address()
+    album["submitted_on"] = f"{datetime.now()}"
 
     add_album(album)
     return render_template("form.html", form_result="Submitted an album!")
+
+def get_ip_address():
+    ar = request.access_route
+    ip_string = ""
+
+    if len(ar) < 2:
+        if request.remote_addr is not None:
+            ip_string = request.remote_addr
+    else:
+        ip_string = ar[0]
+    return hash_ip_addr(ip_string)
+
+def hash_ip_addr(ip_addr):
+    if ip_addr == "":
+        return ""
+    h = hashlib.sha256()
+    h.update(ip_addr.encode())
+    return h.hexdigest()
 
 def parse_album_query(query):
     album_name = query

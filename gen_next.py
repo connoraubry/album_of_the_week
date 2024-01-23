@@ -1,9 +1,10 @@
 import json
 from pathlib import Path
-import os 
+import os
 from dotenv import load_dotenv
-import requests 
-import urllib
+import requests
+import urllib.parse
+from datetime import datetime
 
 env = load_dotenv()
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -21,18 +22,21 @@ def save_json(json_obj):
 
 def load_album(album):
     print(album)
-    
+    album['chosen_on'] = f"{datetime.now()}"
+
     title = album.get("title", "")
     artist = album.get("artist", "")
 
     api_key = os.environ.get("LASTFM_API_KEY", "")
 
-    query = urllib.parse.quote(title) 
-    url = f"http://ws.audioscrobbler.com/2.0/?method=album.search&album={query}&api_key={api_key}&format=json"
+    query = urllib.parse.quote(title)
+    base = "http://ws.audioscrobbler.com/2.0/"
+    method = "method=album.search"
+    url = f"{base}?{method}&album={query}&api_key={api_key}&format=json"
 
     print("Sending request to", url)
     resp = requests.get(url)
-    
+
     json_obj = resp.json()
 
     matches = json_obj.get("results", "{}").get("albummatches", {})
@@ -51,12 +55,12 @@ def load_album(album):
 
     mbid = final_match.get("mbid", "")
     if mbid != "":
-        if load_from_mbid(album, mbid) == False:
+        if load_from_mbid(album, mbid) is False:
             return load_without_mbid(album, final_match)
     else:
         return load_without_mbid(album, final_match)
 
-    return True 
+    return True
 
 
 def load_from_mbid(album, mbid):
@@ -65,8 +69,8 @@ def load_from_mbid(album, mbid):
         album["date"] = date
     print("album art")
     image_path = f"static/images/{album['title']}.jpg"
-    if get_album_art(mbid, image_path) == False:
-        return False 
+    if get_album_art(mbid, image_path) is False:
+        return False
 
     album['image'] = image_path
 
@@ -74,37 +78,36 @@ def load_from_mbid(album, mbid):
         json.dump(album, fp, indent=2)
 
     return True
-    
+
 def load_without_mbid(album, final_match):
     image_url = ""
     image_path = f"static/images/{album['title']}.jpg"
     album['image'] = image_path
 
-
     for image in final_match['image']:
         if image['size'] == "extralarge":
             image_url = image['#text']
     if image_url != "":
-        if get_and_save_image(image_url, image_path) == False:
+        if get_and_save_image(image_url, image_path) is False:
             return False
         with open("album_info.json", "w") as fp:
             json.dump(album, fp, indent=2)
     else:
-        return False 
-    return True 
+        return False
+    return True
 
 def get_and_save_image(url, image_path):
     r = requests.get(url, allow_redirects=True)
     if r.status_code == 200:
         open(image_path, "wb").write(r.content)
-        return True 
-    return False 
+        return True
+    return False
 
 def musicbrainz_query(mbid):
     url = f"https://musicbrainz.org/ws/2/release/{mbid}?fmt=json"
     r = requests.get(url)
     if r.status_code < 200 or r.status_code > 299:
-        return 0, False 
+        return 0, False
     json_obj = r.json()
     date = json_obj.get("date", "")
     if date != "":
@@ -113,30 +116,86 @@ def musicbrainz_query(mbid):
             date = s[0]
     return date, True
 
-def get_album_art(mbid, image_path): 
+def get_album_art(mbid, image_path):
     url = f"http://coverartarchive.org/release/{mbid}/front"
     print(url)
     r = requests.get(url, allow_redirects=True)
     if r.status_code == 200:
         open(image_path, "wb").write(r.content)
-        return True 
-    return False 
+        return True
+    return False
+
+def get_current_album_info():
+    obj = {}
+    with open("album_info.json") as fp:
+        obj = json.load(fp)
+    return obj
+
+def get_history():
+    h = Path("history.json")
+    if not h.is_file():
+        with open(h, "w") as fp:
+            json.dump([], fp)
+
+    history_list = []
+    with open(h, "r") as fp:
+        history_list = json.load(fp)
+    return history_list
+
+def get_most_recent_submitters():
+    history = get_history()
+
+    submissions = [h.get("submitted_by", "") for h in history]
+    submissions = list(dict.fromkeys(submissions))  # remove duplicates
+    return submissions
+
+def add_current_to_history():
+    curr = get_current_album_info()
+    history = get_history()
+    history.append(curr)
+
+    with open(Path("history.json"), "w") as fp:
+        json.dump(history, fp, indent=2)
+
+def pop_next_album(albums):
+
+    if len(albums) < 0:
+        return None
+    if len(albums) == 1:
+        return albums.pop(0)
+
+    # get three most recent submissions
+    recent_users = get_most_recent_submitters()[-3:]
+    return find_next_album(albums, recent_users)
+
+def find_next_album(albums, recent_users):
+    while len(recent_users) > 0:
+        for idx, album in enumerate(albums):
+            next_submitted = album.get("submitted_by", "")
+            if next_submitted not in recent_users:
+                # pop first available "not by the same person"
+                return albums.pop(idx)
+
+        # no such albums found, remove a recent user
+        recent_users.pop(0)
+
+    return albums.pop(0)
 
 def main():
     json_obj = load_json()
     albums = json_obj.get("albums", [])
 
-
     succeeded = False
 
-    while succeeded == False:
+    while succeeded is False:
 
         album = ""
         if len(albums) == 0:
-           return 
-        album = albums.pop(0)
-
+            return
+        album = pop_next_album(albums)
         succeeded = load_album(album)
+        if succeeded:
+            add_current_to_history()
 
     json_obj['albums'] = albums
     save_json(json_obj)
