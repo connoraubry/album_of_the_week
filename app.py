@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os
 import requests
 import urllib.parse
+import hashlib
 
 app = Flask(__name__)
 count = 1
@@ -67,12 +68,21 @@ def submit():
 
 def get_ip_address():
     ar = request.access_route
+    ip_string = ""
+
     if len(ar) < 2:
         if request.remote_addr is not None:
-            request.remote_addr
-        else:
-            return ""
-    return ar[0]
+            ip_string = request.remote_addr
+    else:
+        ip_string = ar[0]
+    return hash_ip_addr(ip_string)
+
+def hash_ip_addr(ip_addr):
+    if ip_addr == "":
+        return ""
+    h = hashlib.sha256()
+    h.update(ip_addr.encode())
+    return h.hexdigest()
 
 def parse_album_query(query):
     album_name = query
