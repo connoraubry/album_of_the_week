@@ -68,7 +68,10 @@ def submit():
 def get_ip_address():
     ar = request.access_route
     if len(ar) < 2:
-        return ""
+        if request.remote_addr is not None:
+            request.remote_addr
+        else:
+            return ""
     return ar[0]
 
 def parse_album_query(query):
