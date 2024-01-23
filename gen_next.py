@@ -147,6 +147,7 @@ def get_most_recent_submitters():
 
     submissions = [h.get("submitted_by", "") for h in history]
     submissions = list(dict.fromkeys(submissions))  # remove duplicates
+    submissions = [s for s in submissions if s != ""]
     return submissions
 
 def add_current_to_history():
