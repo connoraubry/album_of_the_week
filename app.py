@@ -6,6 +6,7 @@ import os
 import requests
 import urllib.parse
 import hashlib
+from datetime import datetime
 
 app = Flask(__name__)
 count = 1
@@ -62,6 +63,7 @@ def submit():
 
     album = parse_album_query(query)
     album["submitted_by"] = get_ip_address()
+    album["submitted_on"] = f"{datetime.now()}"
 
     add_album(album)
     return render_template("form.html", form_result="Submitted an album!")
