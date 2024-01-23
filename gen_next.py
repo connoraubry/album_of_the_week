@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 import requests
 import urllib.parse
+from datetime import datetime
 
 env = load_dotenv()
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -21,6 +22,7 @@ def save_json(json_obj):
 
 def load_album(album):
     print(album)
+    album['chosen_on'] = f"{datetime.now()}"
 
     title = album.get("title", "")
     artist = album.get("artist", "")
@@ -123,6 +125,62 @@ def get_album_art(mbid, image_path):
         return True
     return False
 
+def get_current_album_info():
+    obj = {}
+    with open("album_info.json") as fp:
+        obj = json.load(fp)
+    return obj
+
+def get_history():
+    h = Path("history.json")
+    if not h.is_file():
+        with open(h, "w") as fp:
+            json.dump([], fp)
+
+    history_list = []
+    with open(h, "r") as fp:
+        history_list = json.load(fp)
+    return history_list
+
+def get_most_recent_submitters():
+    history = get_history()
+
+    submissions = [h.get("submitted_by", "") for h in history]
+    submissions = list(dict.fromkeys(submissions))  # remove duplicates
+    return submissions
+
+def add_current_to_history():
+    curr = get_current_album_info()
+    history = get_history()
+    history.append(curr)
+
+    with open(Path("history.json"), "w") as fp:
+        json.dump(history, fp, indent=2)
+
+def pop_next_album(albums):
+
+    if len(albums) < 0:
+        return None
+    if len(albums) == 1:
+        return albums.pop(0)
+
+    # get three most recent submissions
+    recent_users = get_most_recent_submitters()[-3:]
+    return find_next_album(albums, recent_users)
+
+def find_next_album(albums, recent_users):
+    while len(recent_users) > 0:
+        for idx, album in enumerate(albums):
+            next_submitted = album.get("submitted_by", "")
+            if next_submitted not in recent_users:
+                # pop first available "not by the same person"
+                return albums.pop(idx)
+
+        # no such albums found, remove a recent user
+        recent_users.pop(0)
+
+    return albums.pop(0)
+
 def main():
     json_obj = load_json()
     albums = json_obj.get("albums", [])
@@ -130,12 +188,14 @@ def main():
     succeeded = False
 
     while succeeded is False:
+
         album = ""
         if len(albums) == 0:
             return
-        album = albums.pop(0)
-
+        album = pop_next_album(albums)
         succeeded = load_album(album)
+        if succeeded:
+            add_current_to_history()
 
     json_obj['albums'] = albums
     save_json(json_obj)
