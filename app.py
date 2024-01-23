@@ -58,24 +58,18 @@ def options():
 @app.route("/submit", methods=["POST"])
 def submit():
     query = request.form.get("title", "")
-    print(request.remote_addr)
-    with open("test.txt", "a") as fp:
-        result_line = " "
-        ra = request.remote_addr
-        if ra is None:
-            ra = " "
-        result_line += ra
-
-        ar = request.access_route
-        ar_string = " ".join(ar)
-
-        result_line = result_line + " " + ar_string
-        fp.write(result_line + "\n")
 
     album = parse_album_query(query)
+    album["submitted_by"] = get_ip_address()
 
     add_album(album)
     return render_template("form.html", form_result="Submitted an album!")
+
+def get_ip_address():
+    ar = request.access_route
+    if len(ar) < 2:
+        return ""
+    return ar[0]
 
 def parse_album_query(query):
     album_name = query
