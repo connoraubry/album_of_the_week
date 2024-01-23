@@ -60,10 +60,17 @@ def submit():
     query = request.form.get("title", "")
     print(request.remote_addr)
     with open("test.txt", "a") as fp:
+        result_line = " "
         ra = request.remote_addr
         if ra is None:
-            ra = "none"
-        fp.write(ra + "\n")
+            ra = " "
+        result_line += ra
+
+        ar = request.access_route
+        ar_string = " ".join(ar)
+
+        result_line = result_line + " " + ar_string
+        fp.write(result_line + "\n")
 
     album = parse_album_query(query)
 
