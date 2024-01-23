@@ -58,6 +58,12 @@ def options():
 @app.route("/submit", methods=["POST"])
 def submit():
     query = request.form.get("title", "")
+    print(request.remote_addr)
+    with open("test.txt", "a") as fp:
+        ra = request.remote_addr
+        if ra is None:
+            ra = "none"
+        fp.write(ra + "\n")
 
     album = parse_album_query(query)
 
