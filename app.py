@@ -45,6 +45,7 @@ def query_options(query):
     method = "method=album.search"
     url = f"{base}?{method}&album={query}&api_key={api_key}&format=json"
 
+    print(url)
     resp = requests.get(url)
     return resp.json()
 

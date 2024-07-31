@@ -6,4 +6,4 @@ dist/
 build/
 static/images/*.jpg
 
-upcoming.json
+*.json

@@ -50,3 +50,12 @@ ln -s /etc/nginx/sites-available/aotw /etc/nginx/sites-enabled/aotw
 nginx -t
 systemctl restart nginx
 ```
+
+7. Configure API keys
+
+Create a file called `.env` in `album_of_the_week/` directory.
+Add your last.fm api key and secret.
+```
+LASTFM_API_KEY="1234567890abcdef"
+LASTFM_API_SECRET="1234567890abcdef"
+```

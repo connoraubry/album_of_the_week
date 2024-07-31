@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import requests
 import urllib.parse
 from datetime import datetime
+import random
 
 env = load_dotenv()
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -142,14 +143,6 @@ def get_history():
         history_list = json.load(fp)
     return history_list
 
-def get_most_recent_submitters():
-    history = get_history()
-
-    submissions = [h.get("submitted_by", "") for h in history]
-    submissions = list(dict.fromkeys(submissions))  # remove duplicates
-    submissions = [s for s in submissions if s != ""]
-    return submissions
-
 def add_current_to_history():
     curr = get_current_album_info()
     history = get_history()
@@ -160,25 +153,34 @@ def add_current_to_history():
 
 def pop_next_album(albums):
 
-    if len(albums) < 0:
+    if len(albums) == 0:
         return None
     if len(albums) == 1:
         return albums.pop(0)
 
-    # get three most recent submissions
-    recent_users = get_most_recent_submitters()[-3:]
-    return find_next_album(albums, recent_users)
+    return find_next_album(albums)
 
-def find_next_album(albums, recent_users):
-    while len(recent_users) > 0:
-        for idx, album in enumerate(albums):
-            next_submitted = album.get("submitted_by", "")
-            if next_submitted not in recent_users:
-                # pop first available "not by the same person"
-                return albums.pop(idx)
+def find_next_album(albums):
+    now = datetime.now()
 
-        # no such albums found, remove a recent user
-        recent_users.pop(0)
+    time_since = [0.0 for _ in albums]
+
+    for idx, album in enumerate(albums):
+        time = album.get("submitted_on")
+        dt_time = datetime.strptime(time, "%Y-%m-%d %H:%M:%S.%f")
+        delta = now - dt_time
+        time_since[idx] = abs(delta.total_seconds())
+
+    total_seconds = sum(time_since)
+    probabilities = [x / total_seconds for x in time_since]
+    print(probabilities)
+
+    random_value = random.random()
+    print(random_value)
+    for idx, p in enumerate(probabilities):
+        if random_value < p:
+            return albums.pop(idx)
+        random_value -= p
 
     return albums.pop(0)
 
