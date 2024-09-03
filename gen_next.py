@@ -6,9 +6,17 @@ import requests
 import urllib.parse
 from datetime import datetime
 import random
+import logging
 
 env = load_dotenv()
-dir_path = os.path.dirname(os.path.realpath(__file__))
+dir_path = Path(__file__).parent.resolve()
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename=dir_path/"gen_log.log",
+                    encoding="utf-8",
+                    format='%(asctime)s %(levelname)s: %(message)s',
+                    datefmt="%Y-%m-%d %H:%M:%S",
+                    level=logging.DEBUG)
+
 
 def load_json():
     persist_file = Path(dir_path) / "upcoming.json"
@@ -22,7 +30,7 @@ def save_json(json_obj):
         json.dump(json_obj, fp, indent=2)
 
 def load_album(album):
-    print(album)
+    logger.debug(f"loading album: {album}")
     album['chosen_on'] = f"{datetime.now()}"
 
     title = album.get("title", "")
@@ -35,7 +43,7 @@ def load_album(album):
     method = "method=album.search"
     url = f"{base}?{method}&album={query}&api_key={api_key}&format=json"
 
-    print("Sending request to", url)
+    logger.debug(f"Sending request to {url}")
     resp = requests.get(url)
 
     json_obj = resp.json()
@@ -68,7 +76,6 @@ def load_from_mbid(album, mbid):
     date, success = musicbrainz_query(mbid)
     if success:
         album["date"] = date
-    print("album art")
     image_path = f"static/images/{album['title']}.jpg"
     if get_album_art(mbid, image_path) is False:
         return False
@@ -119,7 +126,6 @@ def musicbrainz_query(mbid):
 
 def get_album_art(mbid, image_path):
     url = f"http://coverartarchive.org/release/{mbid}/front"
-    print(url)
     r = requests.get(url, allow_redirects=True)
     if r.status_code == 200:
         open(image_path, "wb").write(r.content)
@@ -160,6 +166,9 @@ def pop_next_album(albums):
 
     return find_next_album(albums)
 
+def get_title_artist(album):
+    return f"{album.get('title', '')}-{album.get('artist', '')}"
+
 def find_next_album(albums):
     now = datetime.now()
 
@@ -173,12 +182,16 @@ def find_next_album(albums):
 
     total_seconds = sum(time_since)
     probabilities = [x / total_seconds for x in time_since]
-    print(probabilities)
+
+    logger.info("Selecting the next album. Listing probabilities:")
+    for album, probability in zip(albums, probabilities):
+        logger.info(f"{get_title_artist(album)} probability: {probability}")
 
     random_value = random.random()
-    print(random_value)
+    logger.info(f"Random value chosen: {random_value}")
     for idx, p in enumerate(probabilities):
         if random_value < p:
+            logger.info(f"Selected album: {get_title_artist(albums[idx])}")
             return albums.pop(idx)
         random_value -= p
 

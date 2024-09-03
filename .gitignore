@@ -6,4 +6,5 @@ dist/
 build/
 static/images/*.jpg
 
+*.log
 *.json
