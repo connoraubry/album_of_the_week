@@ -170,18 +170,10 @@ def get_title_artist(album):
     return f"{album.get('title', '')}-{album.get('artist', '')}"
 
 def find_next_album(albums):
-    now = datetime.now()
-
-    time_since = [0.0 for _ in albums]
-
-    for idx, album in enumerate(albums):
-        time = album.get("submitted_on")
-        dt_time = datetime.strptime(time, "%Y-%m-%d %H:%M:%S.%f")
-        delta = now - dt_time
-        time_since[idx] = abs(delta.total_seconds())
-
-    total_seconds = sum(time_since)
-    probabilities = [x / total_seconds for x in time_since]
+    last_6 = albums[:6]
+    num_albums = len(last_6)
+    probabilities = [2**(num_albums-i-1) for i in range(num_albums)]
+    probabilities = [p/sum(probabilities) for p in probabilities]
 
     logger.info("Selecting the next album. Listing probabilities:")
     for album, probability in zip(albums, probabilities):
