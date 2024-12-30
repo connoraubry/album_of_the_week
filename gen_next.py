@@ -11,7 +11,7 @@ import logging
 env = load_dotenv()
 dir_path = Path(__file__).parent.resolve()
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename=dir_path/"gen_log.log",
+logging.basicConfig(filename=dir_path / "gen_log.log",
                     encoding="utf-8",
                     format='%(asctime)s %(levelname)s: %(message)s',
                     datefmt="%Y-%m-%d %H:%M:%S",
@@ -45,22 +45,41 @@ def load_album(album):
 
     logger.debug(f"Sending request to {url}")
     resp = requests.get(url)
-
     json_obj = resp.json()
-
     matches = json_obj.get("results", "{}").get("albummatches", {})
 
     final_match = {}
 
     if artist != "":
+        found = False
         for match in matches.get("album", []):
             if match.get("artist", "") == artist:
                 final_match = match
+                found = True
                 break
+        if not found:
+            method = "method=artist.gettopalbums"
+            url = f"{base}?{method}&artist={artist}&api_key={api_key}&format=json"
+            logger.debug(f"Sending request to {url}")
+            resp = requests.get(url)
+            json_obj = resp.json()
+
+            albums = json_obj.get("topalbums", "{}").get("album", [])
+            for album in albums:
+                if album.get("name", "") == title:
+                    final_match = match
+                    break
+            return
     else:
         final_match = matches.get("album", [])[0]
         album['title'] = final_match['name']
         album['artist'] = final_match['artist']
+
+    print(final_match)
+    print("matches")
+    # print(matches)
+    for match in matches.get("album", []):
+        print(match)
 
     mbid = final_match.get("mbid", "")
     if mbid != "":
@@ -76,6 +95,9 @@ def load_from_mbid(album, mbid):
     date, success = musicbrainz_query(mbid)
     if success:
         album["date"] = date
+        logger.debug("load_from_mbid: musicbrainz success")
+    else:
+        logger.debug("load_from_mbid: musicbrainz failure")
     image_path = f"static/images/{album['title']}.jpg"
     if get_album_art(mbid, image_path) is False:
         return False
@@ -91,6 +113,8 @@ def load_without_mbid(album, final_match):
     image_url = ""
     image_path = f"static/images/{album['title']}.jpg"
     album['image'] = image_path
+
+    print(album, final_match)
 
     for image in final_match['image']:
         if image['size'] == "extralarge":
@@ -172,8 +196,8 @@ def get_title_artist(album):
 def find_next_album(albums):
     last_6 = albums[:6]
     num_albums = len(last_6)
-    probabilities = [2**(num_albums-i-1) for i in range(num_albums)]
-    probabilities = [p/sum(probabilities) for p in probabilities]
+    probabilities = [2**(num_albums - i - 1) for i in range(num_albums)]
+    probabilities = [p / sum(probabilities) for p in probabilities]
 
     logger.info("Selecting the next album. Listing probabilities:")
     for album, probability in zip(albums, probabilities):
@@ -199,6 +223,7 @@ def main():
 
         album = ""
         if len(albums) == 0:
+            logger.info("Length of albums is 0. exiting")
             return
         album = pop_next_album(albums)
         succeeded = load_album(album)
