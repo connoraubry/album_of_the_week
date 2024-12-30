@@ -69,7 +69,6 @@ def load_album(album):
                 if album.get("name", "") == title:
                     final_match = match
                     break
-            return
     else:
         final_match = matches.get("album", [])[0]
         album['title'] = final_match['name']
