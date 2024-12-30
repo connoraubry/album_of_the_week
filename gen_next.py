@@ -65,20 +65,14 @@ def load_album(album):
             json_obj = resp.json()
 
             albums = json_obj.get("topalbums", "{}").get("album", [])
-            for album in albums:
-                if album.get("name", "") == title:
+            for match in albums:
+                if match.get("name", "") == title:
                     final_match = match
                     break
     else:
         final_match = matches.get("album", [])[0]
         album['title'] = final_match['name']
         album['artist'] = final_match['artist']
-
-    print(final_match)
-    print("matches")
-    # print(matches)
-    for match in matches.get("album", []):
-        print(match)
 
     mbid = final_match.get("mbid", "")
     if mbid != "":
@@ -91,12 +85,14 @@ def load_album(album):
 
 
 def load_from_mbid(album, mbid):
+    print(album, mbid)
     date, success = musicbrainz_query(mbid)
     if success:
         album["date"] = date
         logger.debug("load_from_mbid: musicbrainz success")
     else:
         logger.debug("load_from_mbid: musicbrainz failure")
+    print(album)
     image_path = f"static/images/{album['title']}.jpg"
     if get_album_art(mbid, image_path) is False:
         return False
