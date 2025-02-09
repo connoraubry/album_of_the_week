@@ -52,7 +52,7 @@ class Album():
     def __eq__(self, other):
         if not isinstance(other, Album):
             return NotImplemented
-        return self.name == other.name and self.artist == other.artist and \
+        return self.title == other.title and self.artist == other.artist and \
             self.submitted_by == other.submitted_by and \
             self.submitted_on == other.submitted_on
 
