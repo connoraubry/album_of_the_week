@@ -1,54 +1,23 @@
-from flask import Flask, render_template, request
-import json
-from pathlib import Path
-from dotenv import load_dotenv
 import os
+import json
 import requests
 import urllib.parse
-import hashlib
-from datetime import datetime
+
+from pathlib import Path
+from dotenv import load_dotenv
+from flask import Flask, render_template, request
+
+import helper
+from album_selector import Album
 
 app = Flask(__name__)
-count = 1
 env = load_dotenv()
-
-
-def load_album_info():
-    album_info_file = Path(app.root_path) / "album_info.json"
-    with open(album_info_file, "r") as fp:
-        album_info = json.load(fp)
-
-    return {"album": album_info}
-
 
 @app.route("/")
 def index():
-    values = load_album_info()
+    album = helper.get_current_album()
+    values = {"album": album.to_dict()}
     return render_template("index.html", **values)
-
-
-@app.route("/test")
-def test():
-    resp_json = query_options("com")
-    matches = parse_album_matches(resp_json)
-    return render_template("options.html", albums=matches)
-
-
-def query_options(query):
-    print(query)
-    api_key = os.environ.get("LASTFM_API_KEY", "")
-    if api_key == "" or query == "":
-        return {}
-
-    query = urllib.parse.quote(query)
-    base = "http://ws.audioscrobbler.com/2.0/"
-    method = "method=album.search"
-    url = f"{base}?{method}&album={query}&api_key={api_key}&format=json"
-
-    print(url)
-    resp = requests.get(url)
-    return resp.json()
-
 
 @app.route("/search", methods=["GET"])
 def options():
@@ -62,62 +31,33 @@ def options():
 def submit():
     query = request.form.get("title", "")
 
-    album = parse_album_query(query)
-    album["submitted_by"] = get_ip_address()
-    album["submitted_on"] = f"{datetime.now()}"
-
-    add_album(album)
-    return render_template("form.html", form_result="Submitted an album!")
-
-def get_ip_address():
-    ar = request.access_route
-    ip_string = ""
-
-    if len(ar) < 2:
-        if request.remote_addr is not None:
-            ip_string = request.remote_addr
-    else:
-        ip_string = ar[0]
-    return hash_ip_addr(ip_string)
-
-def hash_ip_addr(ip_addr):
-    if ip_addr == "":
-        return ""
-    h = hashlib.sha256()
-    h.update(ip_addr.encode())
-    return h.hexdigest()
-
-def parse_album_query(query):
     album_name = query
     artist_name = ""
 
-    idx = query.rfind("(")  # ) line breaks formatting without close
+    idx = query.rfind("(")
     if (idx != -1):
         album_name = query[:idx].strip()
         artist_name = query[idx:].strip("()")
 
-    album = {
-        "title": album_name,
-        "artist": artist_name,
-    }
-    return album
+    ip_addr_hash = helper.get_ip_address_hash(request.access_route, request.remote_addr)
+    album = Album(title=album_name, artist=artist_name,
+                  submitted_by=ip_addr_hash)
 
-def add_album(title):
-    json_obj = load_json()
-    json_obj['albums'].append(title)
-    save_json(json_obj)
-    return 0
+    helper.add_album_upcoming(album)
+    return render_template("form.html", form_result="Submitted an album!")
 
-def load_json():
-    persist_file = Path(app.root_path) / "upcoming.json"
-    with open(persist_file, "r") as fp:
-        json_obj = json.load(fp)
-    return json_obj
+def query_options(query):
+    api_key = os.environ.get("LASTFM_API_KEY", "")
+    if api_key == "" or query == "":
+        return {}
 
-def save_json(json_obj):
-    persist_file = Path(app.root_path) / "upcoming.json"
-    with open(persist_file, "w") as fp:
-        json.dump(json_obj, fp, indent=2)
+    query = urllib.parse.quote(query)
+    base = "http://ws.audioscrobbler.com/2.0/"
+    method = "method=album.search"
+    url = f"{base}?{method}&album={query}&api_key={api_key}&format=json"
+
+    resp = requests.get(url)
+    return resp.json()
 
 def parse_album_matches(json_obj):
     matches = json_obj.get("results", {}).get("albummatches", {})
