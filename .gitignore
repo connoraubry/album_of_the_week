@@ -8,3 +8,4 @@ static/images/*.jpg
 
 *.log
 *.json
+*.ipynb_checkpoints
