@@ -1,8 +1,17 @@
 import json
 import random
+import logging
 
 from pathlib import Path
 from datetime import datetime, timedelta
+
+dir_path = Path(__file__).parent.resolve()
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename=dir_path / "logs" / "album_selection.log",
+                    encoding="utf-8",
+                    format='%(asctime)s %(levelname)s: %(message)s',
+                    datefmt="%Y-%m-%d %H:%M:%S",
+                    level=logging.DEBUG)
 
 class Album():
     def __init__(self, title: str, artist: str,
@@ -105,7 +114,7 @@ class UpcomingAlbums():
         return sum([len(bin) for bin in self.bins])
 
     def add_album(self, album: Album):
-
+        logger.debug("Adding album %s", album.title)
         added = False
         for bin in self.bins:
             if bin.is_album_valid_entry(album):
@@ -134,6 +143,7 @@ class UpcomingAlbums():
         return album
 
     def select_random_bin_idx(self) -> int:
+        logger.debug("Selecting random bin index")
 
         num_bins = min(len(self.bins), 6)
         relative_odds = [1 for _ in range(num_bins)]
@@ -149,8 +159,10 @@ class UpcomingAlbums():
             relative_odds[i] = mult * relative_odds[i + 1]
 
         probabilities = [p / sum(relative_odds) for p in relative_odds]
+        logger.debug(f"random bin idx relative probabilities {probabilities}")
 
         random_value = random.random()
+        logger.debug(f"random value selected: {random_value}")
 
         for idx, p in enumerate(probabilities):
             if random_value >= p:
