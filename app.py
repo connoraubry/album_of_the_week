@@ -4,6 +4,7 @@ import requests
 import urllib.parse
 
 from pathlib import Path
+from datetime import datetime
 from dotenv import load_dotenv
 from flask import Flask, render_template, request
 
@@ -18,6 +19,22 @@ def index():
     album = helper.get_current_album()
     values = {"album": album.to_dict()}
     return render_template("index.html", **values)
+
+@app.route("/history")
+def history():
+    values = {"albums": []}
+    album_list = []
+    for entry in helper.get_history():
+        date = datetime.fromisoformat(entry.get("chosen_on"))
+        new_album = {
+            "title": entry.get('title'),
+            "artist": entry.get('artist'),
+            "date": date.strftime("%B %d, %Y"),
+        }
+        album_list.append(new_album)
+    album_list.reverse()
+    values = {'albums': album_list}
+    return render_template("history.html", **values)
 
 @app.route("/search", methods=["GET"])
 def options():

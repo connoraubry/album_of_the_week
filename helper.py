@@ -82,3 +82,8 @@ def get_absolute_image_path(album_name: str) -> Path:
 def get_relative_image_path(album_name: str) -> str:
     abs = get_absolute_image_path(album_name)
     return str(abs.relative_to(DIR_PATH))
+
+def get_history() -> dict:
+    with open(HISTORY_PATH, 'r') as fp:
+        history = json.load(fp)
+    return history

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+
+    <title>AOTW History</title>
+
+    <link rel="stylesheet" type="text/css" href="/static/css/primitive.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/main.css" />
+
+    <meta property="og:title" content="AOTW History">
+  </head>
+  <body>
+    <h1>History</h1>
+    <ul>
+    {% for album_info in albums %}
+      <li>
+        {{ album_info.artist }} - {{ album_info.title }}
+        <ul>
+          <li>{{ album_info.date }}</li>
+        </ul>
+      </li>
+    {% endfor %}
+    </ul>
+  </body>
+</html>

@@ -8,6 +8,10 @@ body {
   color: #1c1b1b;
 }
 
+h1 {
+  font-size: 2.25rem;
+}
+
 h1, h1, h3 {
   line-height: 1.2;
   color: inherit;
@@ -20,7 +24,7 @@ img {
 }
 
 #album-title {
-  font-size: 2rem;
+  font-size: 1.8rem;
 }
 
 p {
@@ -117,3 +121,34 @@ input[type=submit] {
   }
 }
 
+.main-section {
+  padding-bottom: 20px;
+}
+
+header {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  flex-wrap: wrap;
+
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.header-title {
+  justify-self: center;
+  width: 800px;
+}
+
+.header-link {
+  /* margin-left: auto; */
+  /* margin-right: 0; */
+  padding: 10px;
+  justify-self: right;
+  position: absolute;
+  right: 0;
+  @media (max-width: 800px) {
+    position: relative;
+  }
+}
