@@ -1,9 +1,7 @@
 import os
-import json
 import requests
 import urllib.parse
 
-from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
 from flask import Flask, render_template, request

@@ -15,7 +15,7 @@ logging.basicConfig(filename=dir_path / "logs" / "album_selection.log",
 
 class Album():
     def __init__(self, title: str, artist: str,
-                 submitted_on: datetime = datetime.now(),
+                 submitted_on: datetime = None,
                  submitted_by: str = "",
                  date: str = "",
                  chosen_on: datetime = datetime.min,
@@ -23,6 +23,8 @@ class Album():
         self.title = title
         self.artist = artist
         self.submitted_on = submitted_on
+        if submitted_on is None:
+            self.submitted_on = datetime.now()
         self.submitted_by = submitted_by
 
         self.date = date
