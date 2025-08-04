@@ -64,6 +64,7 @@ def get_album_matches_from_name(api_key: str, name: str):
 
     json_obj = resp.json()
     logger.debug("got json response")
+    print(json_obj)
     matches = json_obj.get("results", "{}").get("albummatches", {})
     logger.debug("Got album matches")
     return matches
