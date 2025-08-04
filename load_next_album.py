@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 
 import helper
 from album_selector import Album
+from http.client import HTTPConnection
 
 env = load_dotenv()
 dir_path = Path(__file__).parent.resolve()
@@ -20,6 +21,18 @@ logging.basicConfig(filename=dir_path / "logs" / "generator.log",
                     datefmt="%Y-%m-%d %H:%M:%S",
                     level=logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
+
+requests_log = logging.getLogger("requests.packages.urllib3")
+requests_log.setLevel(logging.DEBUG)
+requests_log.propagate = True
+
+HTTPConnection.debuglevel = 1
+
+logging.basicConfig()
+logging.getLogger().setLevel(logging.DEBUG)
+requests_log = logging.getLogger("requests.packages.urllib3")
+requests_log.setLevel(logging.DEBUG)
+requests_log.propagate = True
 
 
 def get_album_matches_from_name(api_key: str, name: str):
