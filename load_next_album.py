@@ -44,7 +44,8 @@ def get_album_matches_from_name(api_key: str, name: str):
         "method": "album.search",
         "album": query,
         "api_key": api_key,
-        "format": "json"
+        "format": "json",
+        "limit": 15
     }
 
     logger.debug(f"Sending request to {url}")
@@ -54,6 +55,7 @@ def get_album_matches_from_name(api_key: str, name: str):
         logger.error(
             "Error sending request to server: timeout after 10 seconds")
         return []
+    logger.info("request returned, attempting to get json")
     json_obj = resp.json()
     matches = json_obj.get("results", "{}").get("albummatches", {})
     return matches
