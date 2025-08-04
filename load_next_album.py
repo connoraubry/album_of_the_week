@@ -36,13 +36,13 @@ requests_log.propagate = True
 
 
 def get_album_matches_from_name(api_key: str, name: str):
-    query = urllib.parse.quote(name)
+    # query = urllib.parse.quote(name)
     url = "http://ws.audioscrobbler.com/2.0/"
     # method = "method=album.search"
     # url = f"{base}?{method}&album={query}&api_key={api_key}&format=json"
     params = {
         "method": "album.search",
-        "album": query,
+        "album": name,
         "api_key": api_key,
         "format": "json",
         "limit": 15
