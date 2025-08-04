@@ -56,6 +56,12 @@ def get_album_matches_from_name(api_key: str, name: str):
             "Error sending request to server: timeout after 10 seconds")
         return []
     logger.info("request returned, attempting to get json")
+
+    print("--- RESPONSE HEADERS ---")
+    print(resp.headers)
+    print("\n--- RESPONSE TEXT (First 500 characters) ---")
+    print(resp.text[:500])
+
     json_obj = resp.json()
     matches = json_obj.get("results", "{}").get("albummatches", {})
     return matches
