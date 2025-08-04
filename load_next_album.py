@@ -2,7 +2,6 @@ import os
 import json
 import logging
 import requests
-import urllib.parse
 
 from pathlib import Path
 from datetime import datetime
@@ -66,18 +65,24 @@ def get_album_matches_from_name(api_key: str, name: str):
     logger.debug("got json response")
     print(json_obj)
     matches = json_obj.get("results", "{}").get("albummatches", {})
-    logger.debug("Got album matches")
+    logger.debug("Got album matches", matches)
     return matches
 
 
 def get_album_matches_from_artist(api_key: str, artist: str):
     logging.debug("getting album matches from artist")
-    base = "http://ws.audioscrobbler.com/2.0/"
-    method = "method=artist.gettopalbums"
-    url = f"{base}?{method}&artist={artist}&api_key={api_key}&format=json"
+    url = "http://ws.audioscrobbler.com/2.0/"
+    # method = "method=artist.gettopalbums"
+    # url = f"{base}?{method}&artist={artist}&api_key={api_key}&format=json"
 
     logger.debug(f"Sending request to {url}")
-    resp = requests.get(url)
+    params = {
+        "method": "artist.gettopalbums",
+        "artist": artist,
+        "api_key": api_key,
+        "format": "json"
+    }
+    resp = requests.get(url, params)
     json_obj = resp.json()
     albums = json_obj.get("topalbums", "{}").get("album", [])
     return albums
@@ -108,9 +113,11 @@ def load_album(album):
     api_key = os.environ.get("LASTFM_API_KEY", "")
 
     matches = get_album_matches_from_name(api_key, album.title)
+    logging.debug("got matches", matches)
     if matches == []:
         return False
     final_match = find_match(matches, api_key, album)
+    logging.debug("final match", final_match)
 
     mbid = final_match.get("mbid", "")
     if mbid != "":
@@ -155,6 +162,7 @@ def load_without_mbid(album: Album, final_match):
 
 
 def get_and_save_image(url, image_path):
+    logging.debug("Trying to get and save image")
     r = requests.get(url, allow_redirects=True)
     if r.status_code == 200:
         open(image_path, "wb").write(r.content)
