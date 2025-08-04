@@ -63,11 +63,14 @@ def get_album_matches_from_name(api_key: str, name: str):
     print(resp.text[:500])
 
     json_obj = resp.json()
+    logger.debug("got json response")
     matches = json_obj.get("results", "{}").get("albummatches", {})
+    logger.debug("Got album matches")
     return matches
 
 
 def get_album_matches_from_artist(api_key: str, artist: str):
+    logging.debug("getting album matches from artist")
     base = "http://ws.audioscrobbler.com/2.0/"
     method = "method=artist.gettopalbums"
     url = f"{base}?{method}&artist={artist}&api_key={api_key}&format=json"
@@ -80,6 +83,7 @@ def get_album_matches_from_artist(api_key: str, artist: str):
 
 
 def find_match(matches: dict, api_key: str, album: Album):
+    logging.debug("finding match")
     if album.artist == "":
         return matches.get("album", [])[0]
 
@@ -87,6 +91,7 @@ def find_match(matches: dict, api_key: str, album: Album):
         if match.get("artist", "") == album.artist:
             return match
 
+    logging.debug("filtering by artist")
     # if name, artist combo not in album search, filter by artist
     for match in get_album_matches_from_artist(api_key, album.artist):
         if match.get("name", "") == album.title:
