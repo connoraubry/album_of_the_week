@@ -21,17 +21,30 @@ logging.basicConfig(filename=dir_path / "logs" / "generator.log",
                     level=logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
+
 def get_album_matches_from_name(api_key: str, name: str):
     query = urllib.parse.quote(name)
-    base = "http://ws.audioscrobbler.com/2.0/"
-    method = "method=album.search"
-    url = f"{base}?{method}&album={query}&api_key={api_key}&format=json"
+    url = "http://ws.audioscrobbler.com/2.0/"
+    # method = "method=album.search"
+    # url = f"{base}?{method}&album={query}&api_key={api_key}&format=json"
+    params = {
+        "method": "album.search",
+        "album": query,
+        "api_key": api_key,
+        "format": "json"
+    }
 
     logger.debug(f"Sending request to {url}")
-    resp = requests.get(url)
+    try:
+        resp = requests.get(url, params=params, timeout=10)
+    except requests.exceptions.Timeout:
+        logger.error(
+            "Error sending request to server: timeout after 10 seconds")
+        return []
     json_obj = resp.json()
     matches = json_obj.get("results", "{}").get("albummatches", {})
     return matches
+
 
 def get_album_matches_from_artist(api_key: str, artist: str):
     base = "http://ws.audioscrobbler.com/2.0/"
@@ -44,6 +57,7 @@ def get_album_matches_from_artist(api_key: str, artist: str):
     albums = json_obj.get("topalbums", "{}").get("album", [])
     return albums
 
+
 def find_match(matches: dict, api_key: str, album: Album):
     if album.artist == "":
         return matches.get("album", [])[0]
@@ -54,10 +68,11 @@ def find_match(matches: dict, api_key: str, album: Album):
 
     # if name, artist combo not in album search, filter by artist
     for match in get_album_matches_from_artist(api_key, album.artist):
-        if match.get("name", "") == album.name:
+        if match.get("name", "") == album.title:
             return match
 
     return matches.get("album", [])[0]
+
 
 def load_album(album):
     logger.debug(f"loading album: {album.title}")
@@ -66,6 +81,8 @@ def load_album(album):
     api_key = os.environ.get("LASTFM_API_KEY", "")
 
     matches = get_album_matches_from_name(api_key, album.title)
+    if matches == []:
+        return False
     final_match = find_match(matches, api_key, album)
 
     mbid = final_match.get("mbid", "")
@@ -79,8 +96,9 @@ def load_album(album):
             helper.save_current_album(album)
             return True
 
-    #not successful in loading with mbid
+    # not successful in loading with mbid
     return load_without_mbid(album, final_match)
+
 
 def load_image_from_mbid(mbid: str, title: str):
     url = f"http://coverartarchive.org/release/{mbid}/front"
@@ -89,6 +107,7 @@ def load_image_from_mbid(mbid: str, title: str):
         open(helper.get_absolute_image_path(title), "wb").write(r.content)
         return True
     return False
+
 
 def load_without_mbid(album: Album, final_match):
     logger.info(f"Attempting to load album {album.title} without mbid")
@@ -99,12 +118,14 @@ def load_without_mbid(album: Album, final_match):
             image_url = image['#text']
 
     if image_url != "":
-        image_ok = get_and_save_image(image_url, helper.get_absolute_image_path(album.title))
+        image_ok = get_and_save_image(
+            image_url, helper.get_absolute_image_path(album.title))
         if image_ok:
             album.image = helper.get_relative_image_path(album.title)
             helper.save_current_album(album)
             return True
     return False
+
 
 def get_and_save_image(url, image_path):
     r = requests.get(url, allow_redirects=True)
@@ -112,6 +133,7 @@ def get_and_save_image(url, image_path):
         open(image_path, "wb").write(r.content)
         return True
     return False
+
 
 def get_date_from_mbid(mbid):
     url = f"https://musicbrainz.org/ws/2/release/{mbid}?fmt=json"
@@ -126,6 +148,7 @@ def get_date_from_mbid(mbid):
             date = s[0]
     return date, True
 
+
 def get_album_art(mbid, image_path):
     url = f"http://coverartarchive.org/release/{mbid}/front"
     r = requests.get(url, allow_redirects=True)
@@ -134,11 +157,13 @@ def get_album_art(mbid, image_path):
         return True
     return False
 
+
 def get_current_album_info():
     obj = {}
     with open("album_info.json") as fp:
         obj = json.load(fp)
     return obj
+
 
 def get_history():
     h = Path("history.json")
@@ -151,6 +176,7 @@ def get_history():
         history_list = json.load(fp)
     return history_list
 
+
 def main():
     succeeded = False
     while succeeded is False:
@@ -162,6 +188,8 @@ def main():
             return
 
         succeeded = load_album(album)
+        logger.debug(f"Album {album} success status: {succeeded}")
+
 
 if __name__ == '__main__':
     main()

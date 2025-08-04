@@ -13,28 +13,36 @@ ALBUM_INFO_PATH = DATA_DIR_PATH / "album_info.json"
 UPCOMING_PATH = DATA_DIR_PATH / "upcoming.json"
 HISTORY_PATH = DATA_DIR_PATH / "history.json"
 
+BACKUP_DIR = DATA_DIR_PATH / "backup"
+
 ABSOLUTE_IMAGES_PATH = DIR_PATH / "static" / "images"
+
 
 def get_current_album() -> Album:
     return Album.load_from_file(ALBUM_INFO_PATH)
+
 
 def save_current_album(album: Album):
     with open(ALBUM_INFO_PATH, 'w') as fp:
         json.dump(album.to_dict(), fp, indent=2)
     add_current_to_history()
 
+
 def load_upcoming_albums() -> UpcomingAlbums:
-    ua = UpcomingAlbums.load_from_file(UPCOMING_PATH)
+    ua = UpcomingAlbums.load_from_file(UPCOMING_PATH, BACKUP_DIR)
     return ua
+
 
 def add_album_upcoming(album: Album):
     ua = load_upcoming_albums()
     ua.add_album(album)
     ua.save(UPCOMING_PATH)
 
+
 def add_album_json(album: dict):
     albumObj = Album.load_from_dict(album)
     add_album_upcoming(albumObj)
+
 
 def get_next_album_persist() -> Album:
     ua = load_upcoming_albums()
@@ -43,6 +51,7 @@ def get_next_album_persist() -> Album:
     album = ua.get_next_album()
     ua.save(UPCOMING_PATH)
     return album
+
 
 def get_ip_address_hash(access_route, remote_addr) -> str:
     ip_string = ""
@@ -56,10 +65,11 @@ def get_ip_address_hash(access_route, remote_addr) -> str:
     if ip_string == "":
         return ip_string
 
-    #hash ip address
+    # hash ip address
     h = hashlib.sha256()
     h.update(ip_string.encode())
     return h.hexdigest()
+
 
 def add_current_to_history():
     current = get_current_album()
@@ -76,12 +86,15 @@ def add_current_to_history():
     with open(HISTORY_PATH, 'w') as fp:
         json.dump(history, fp, indent=2)
 
+
 def get_absolute_image_path(album_name: str) -> Path:
     return ABSOLUTE_IMAGES_PATH / f"{album_name}.jpg"
+
 
 def get_relative_image_path(album_name: str) -> str:
     abs = get_absolute_image_path(album_name)
     return str(abs.relative_to(DIR_PATH))
+
 
 def get_history() -> dict:
     with open(HISTORY_PATH, 'r') as fp:

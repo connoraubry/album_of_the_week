@@ -1,3 +1,4 @@
+import os
 import json
 import random
 import logging
@@ -12,6 +13,7 @@ logging.basicConfig(filename=dir_path / "logs" / "album_selection.log",
                     format='%(asctime)s %(levelname)s: %(message)s',
                     datefmt="%Y-%m-%d %H:%M:%S",
                     level=logging.DEBUG)
+
 
 class Album():
     def __init__(self, title: str, artist: str,
@@ -48,7 +50,8 @@ class Album():
             title=album_info.get("title"),
             artist=album_info.get("artist"),
             submitted_by=album_info.get("submitted_by", ""),
-            submitted_on=datetime.fromisoformat(album_info.get("submitted_on")),
+            submitted_on=datetime.fromisoformat(
+                album_info.get("submitted_on")),
             chosen_on=datetime.fromisoformat(album_info.get("chosen_on")),
             image=album_info.get("image", ""),
             date=album_info.get("date", "")
@@ -66,6 +69,7 @@ class Album():
         return self.title == other.title and self.artist == other.artist and \
             self.submitted_by == other.submitted_by and \
             self.submitted_on == other.submitted_on
+
 
 class Bin():
     def __init__(self, start: datetime, id: int):
@@ -104,6 +108,7 @@ class Bin():
             return NotImplemented
         return self.id == other.id and self.start == other.start and \
             self.elements == other.elements
+
 
 class UpcomingAlbums():
     def __init__(self):
@@ -187,6 +192,21 @@ class UpcomingAlbums():
             self.streak_len = 1
         return idx
 
+    def backup(self, filepath: str | Path):
+        os.makedirs(filepath, exist_ok=True)
+        now = datetime.now()
+        timestamp = now.strftime("%Y%m%d_%H%M%S")
+
+        data = {
+            'bins': [bin.to_dict() for bin in self.bins],
+            'next_id': self.next_id,
+            'streak_len': self.streak_len,
+            'streak_id': self.streak_id,
+        }
+        output = f"upcoming_{timestamp}.json"
+        with open(filepath / output, 'w') as fp:
+            json.dump(data, fp, indent=2)
+
     def save(self, filename: str | Path):
         data = {
             'bins': [bin.to_dict() for bin in self.bins],
@@ -198,7 +218,7 @@ class UpcomingAlbums():
             json.dump(data, fp, indent=2)
 
     @classmethod
-    def load_from_file(cls, filename: Path):
+    def load_from_file(cls, filename: Path, backup: Path):
 
         # no file exists, init
         if not filename.is_file():
@@ -215,6 +235,8 @@ class UpcomingAlbums():
         upcoming.next_id = data.get('next_id', 1)
         upcoming.streak_len = data.get('streak_len', 0)
         upcoming.streak_id = data.get('streak_id', -1)
+
+        upcoming.backup(backup)
 
         return upcoming
 
